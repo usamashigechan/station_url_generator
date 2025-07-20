@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>京急線 URL ジェネレーター</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c5aa0;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        label {
+            display: block;
+            margin: 10px 0;
+        }
+        input[type="email"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #1e3a6b;
+        }
+        #station-list label {
+            margin: 5px 0;
+        }
+        #results, #python-response {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<h1>🚆 京急線 URL ジェネレーター</h1>
+<div class="container">
+    <label for="page-select">📄 Page数:</label>
+    <select id="page-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+    </select>
+
+    <label for="email">📧 メールアドレス:</label>
+    <input type="email" id="email" placeholder="your-email@example.com" required>
+
+    <label>🚉 京急線の駅を選択してください:</label>
+    <div id="station-list"></div>
+
+    <button onclick="generateURLs()">🔗 URLを生成</button>
+    <button onclick="sendToPython()">🐍 Pythonへデータ送信</button>
+    
+    <div id="results"></div>
+    <div id="python-response"></div>
+</div>
+
+<script>
+const baseURLTemplate = "https://suumo.jp/jj/chintai/ichiran/FR301FC005/?ar=030&bs=040";
+const fixedSuffix = "&cb=0.0&ct=9999999&mb=0&mt=9999999&et=9999999&cn=9999999&shkr1=03&shkr2=03&shkr3=03&shkr4=03&sngz=&po1=25&po2=99&pc=100&page=";
+
+// 🚆 京急線 駅データ（rn統一）
+const stationData = {
+  "sengakuji": { "name": "泉岳寺", "ek": "009521340", "area": "013", "rn": "0095" },
+  "shinagawa": { "name": "品川", "ek": "009517460", "area": "013", "rn": "0095" },
+  "kitashinagawa": { "name": "北品川", "ek": "009511210", "area": "013", "rn": "0095" },
+  "shinbanba": { "name": "新馬場", "ek": "009520140", "area": "013", "rn": "0095" },
+  "aomonoyokocho": { "name": "青物横丁", "ek": "009500240", "area": "013", "rn": "0095" },
+  "samezu": { "name": "鮫洲", "ek": "009500240", "area": "013", "rn": "0095" },
+  "tachiaigawa": { "name": "立会川", "ek": "009523090", "area": "013", "rn": "0095" },
+  "omorikaigan": { "name": "大森海岸", "ek": "009506380", "area": "013", "rn": "0095" },
+  "heiwajima": { "name": "平和島", "ek": "009534650", "area": "013", "rn": "0095" },
+  "omorimachi": { "name": "大森町", "ek": "009506400", "area": "013", "rn": "0095" },
+  "umeyashiki": { "name": "梅屋敷", "ek": "009504660", "area": "013", "rn": "0095" },
+  "keikyukamata": { "name": "京急蒲田", "ek": "009513410", "area": "013", "rn": "0095" },
+  "zoshiki": { "name": "雑色", "ek": "009521660", "area": "013", "rn": "0095" },
+  "rokugodote": { "name": "六郷土手", "ek": "009541470", "area": "013", "rn": "0095" },
+  "keikyu_kawasaki": { "name": "京急川崎", "ek": "009513420", "area": "014", "rn": "0095" },
+  "hatchonawate": { "name": "八丁畷", "ek": "009530810", "area": "014", "rn": "0095" },
+  "tsurumiichiba": { "name": "鶴見市場", "ek": "009525080", "area": "014", "rn": "0095" },
+  "keikyu_tsurumi": { "name": "京急鶴見", "ek": "009513460", "area": "014", "rn": "0095" },
+  "kagetsusoji": { "name": "花月総持寺", "ek": "009507720", "area": "014", "rn": "0095" },
+  "namamugi": { "name": "生麦", "ek": "009527900", "area": "014", "rn": "0095" },
+  "keikyu_shinkoyasu": { "name": "京急新子安", "ek": "009513440", "area": "014", "rn": "0095" },
+  "koyasu": { "name": "子安", "ek": "009515450", "area": "014", "rn": "0095" },
+  "kanagawashinmachi": { "name": "神奈川新町", "ek": "009508640", "area": "014", "rn": "0095" },
+  "keikyu_higashikanagawa": { "name": "京急東神奈川", "ek": "009527020", "area": "014", "rn": "0095" },
+  "kanagawa": { "name": "神奈川", "ek": "009508630", "area": "014", "rn": "0095" },
+  "yokohama": { "name": "横浜", "ek": "009540940", "area": "014", "rn": "0095" },
+  "tobe": { "name": "戸部", "ek": "009526340", "area": "014", "rn": "0095" },
+  "hinodecho": { "name": "日ノ出町", "ek": "009532970", "area": "014", "rn": "0095" },
+  "koganecho": { "name": "黄金町", "ek": "009514570", "area": "014", "rn": "0095" },
+  "minamiota": { "name": "南太田", "ek": "009514570", "area": "014", "rn": "0095" },
+  "idogaya": { "name": "井土ヶ谷", "ek": "009503190", "area": "014", "rn": "0095" },
+  "gumyoji": { "name": "弘明寺", "ek": "009512910", "area": "014", "rn": "0095" },
+  "kamiooka": { "name": "上大岡", "ek": "009512910", "area": "014", "rn": "0095" },
+  "byobugaura": { "name": "屏風浦", "ek": "009533140", "area": "014", "rn": "0095" },
+  "sugita": { "name": "杉田", "ek": "009520580", "area": "014", "rn": "0095" },
+  "keikyu_tomioka": { "name": "京急富岡", "ek": "009513470", "area": "014", "rn": "0095" },
+  "nokendai": { "name": "能見台", "ek": "009529940", "area": "014", "rn": "0095" },
+  "kanazawabunko": { "name": "金沢文庫", "ek": "009508660", "area": "014", "rn": "0095" },
+  "kanazawahakkei": { "name": "金沢八景", "ek": "009508650", "area": "014", "rn": "0095" },
+  "oppama": { "name": "追浜", "ek": "009506990", "area": "014", "rn": "0095" },
+  "keikyu_taura": { "name": "京急田浦", "ek": "009513450", "area": "014", "rn": "0095" },
+  "anjinzuka": { "name": "安針塚", "ek": "009501750", "area": "014", "rn": "0095" },
+  "henmi": { "name": "逸見", "ek": "009534760", "area": "014", "rn": "0095" },
+  "shioiri": { "name": "汐入", "ek": "009517030", "area": "014", "rn": "0095" },
+  "yokosukachuo": { "name": "横須賀中央", "ek": "009540900", "area": "014", "rn": "0095" },
+  "kenritsudaigaku": { "name": "県立大学", "ek": "009513490", "area": "014", "rn": "0095" },
+  "horinouchi": { "name": "堀ノ内", "ek": "011535240", "area": "014", "rn": "0115" }, 
+  "shinootsu": { "name": "新大津", "ek": "011519150", "area": "014", "rn": "0115" },
+  "kitakurihama": { "name": "北久里浜", "ek": "011511120", "area": "014", "rn": "0115" },
+  "keikyu_kurihama": { "name": "京急久里浜", "ek": "011513430", "area": "014", "rn": "0115" },
+  "yrpnobi": { "name": "YRP野比", "ek": "011541580", "area": "014", "rn": "0115" },
+  "keikyu_nagasawa": { "name": "京急長沢", "ek": "011513480", "area": "014", "rn": "0115" },
+  "tsukuihama": { "name": "津久井浜", "ek": "011524690", "area": "014", "rn": "0115" },
+  "miurakaigan": { "name": "三浦海岸", "ek": "011536260", "area": "014", "rn": "0115" },
+  "misakiguchi": { "name": "三崎口", "ek": "011536680", "area": "014", "rn": "0115" },
+  "mutsuurajuku": { "name": "六浦", "ek": "011038930", "area": "014", "rn": "0110"  },
+  "jinmuji": { "name": "神武寺", "ek": "011020310", "area": "014", "rn": "0110"  },
+  "zushi_hayama": { "name": "逗子・葉山", "ek": "011019750", "area": "014", "rn": "0110"  }
+};
+
+// 🚉 駅リストを生成
+const stationListDiv = document.getElementById("station-list");
+stationListDiv.innerHTML = "";
+for (const key in stationData) {
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = key;
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(" " + stationData[key].name));
+    stationListDiv.appendChild(label);
+    stationListDiv.appendChild(document.createElement("br"));
+}
+
+// 🔗 URLを生成
+function generateURLs() {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = "";
+    const checkedStations = document.querySelectorAll('#station-list input:checked');
+    
+    if (checkedStations.length === 0) {
+        resultsDiv.innerHTML = `<p class="error">⚠ 少なくとも1つの駅を選択してください。</p>`;
+        return;
+    }
+
+    checkedStations.forEach(input => {
+        const station = stationData[input.value];
+        const url = `${baseURLTemplate}&ra=${station.area}&rn=${station.rn}&ek=${station.ek}${fixedSuffix}`;
+        resultsDiv.innerHTML += `<p><a href="${url}" target="_blank">${station.name}</a></p>`;
+    });
+}
+
+// 🐍 Pythonへデータ送信
+async function sendToPython() {
+    const page = document.getElementById("page-select").value;
+    const email = document.getElementById("email").value.trim();
+    const pythonResponseDiv = document.getElementById("python-response");
+    pythonResponseDiv.innerHTML = "";
+
+    // 入力バリデーション
+    if (!email) {
+        pythonResponseDiv.innerHTML = `<p class="error">⚠ メールアドレスを入力してください。</p>`;
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        pythonResponseDiv.innerHTML = `<p class="error">⚠ 有効なメールアドレスを入力してください。</p>`;
+        return;
+    }
+
+    const selectedStations = [];
+    const urls = [];
+    const checkedStations = document.querySelectorAll('#station-list input:checked');
+
+    if (checkedStations.length === 0) {
+        pythonResponseDiv.innerHTML = `<p class="error">⚠ 少なくとも1つの駅を選択してください。</p>`;
+        return;
+    }
+
+    checkedStations.forEach(input => {
+        const station = stationData[input.value];
+        const url = `${baseURLTemplate}&ra=${station.area}&rn=${station.rn}&ek=${station.ek}${fixedSuffix}`;
+        selectedStations.push(station.name);
+        urls.push(url);
+    });
+
+    const sendData = { page, email, stations: selectedStations, urls };
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // タイムアウトを15秒に変更
+        const response = await fetch("http://127.0.0.1:5000/receive", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sendData),
+            signal: controller.signal,
+            mode: "cors",
+            cache: "no-cache"
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`サーバーエラー: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // データ構造の確認
+        if (!data || typeof data !== "object") {
+            throw new Error("不正なレスポンスデータ");
+        }
+
+        pythonResponseDiv.innerHTML = `
+            <p class="success"><b>Page数:</b> ${data.page || sendData.page}</p>
+            <p class="success"><b>送信したメールアドレス:</b> ${data.email || sendData.email}</p>
+            <p class="success"><b>選択した駅:</b> ${(data.stations || sendData.stations).join(", ")}</p>
+            <p class="success"><b>対応するURL:</b></p>
+            <ul>
+                ${(data.urls || sendData.urls).map(url => `<li><a href="${url}" target="_blank">${url}</a></li>`).join("")}
+            </ul>
+        `;
+    } catch (error) {
+        console.error("通信エラー:", error.message); // エラー内容をコンソールに記録
+
+        pythonResponseDiv.innerHTML = `
+            <p class="error">データ送信エラー</p>
+            <p><b>Page数:</b> ${page}</p>
+            <p><b>メールアドレス:</b> ${email}</p>
+            <p><b>各駅のリスト:</b> ${selectedStations.join(", ")}</p>
+            <p><b>URLのリスト:</b></p>
+            <ul>
+                ${urls.map(url => `<li><a href="${url}" target="_blank">${url}</a></li>`).join("")}
+            </ul>
+        `;
+    }
+}
+</script>
+<script src="script.js"></script>  
+</body>
+</html>

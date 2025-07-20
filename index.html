@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>路線ボタンジェネレーター</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #2c5aa0;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+button {
+    background-color: #2c5aa0;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #1e3d6f;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* 説明ボタンのスタイル */
+button.explain {
+    background-color: #c8f7c5;
+    color: black;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🚃 路線ボタンジェネレーター</h1>
+
+    <script>
+    function goExplain() {
+        alert('説明のページに移動します。');
+        window.location.href = 'explain1.html';
+    }
+
+    function goToYamanote() {
+        alert('山手線のページに移動します。');
+        window.location.href = 'yamanoteLine2.html';
+    }
+
+    function goToToyoko() {
+        alert('東横線のページに移動します。');
+        window.location.href = 'toyokoLine2.html';
+    }
+
+    function goToOimachi() {
+        alert('大井町線のページに移動します。');
+        window.location.href = 'oimachiLine2.html';
+    }
+
+    function goToDenen() {
+        alert('田園都市線のページに移動します。');
+        window.location.href = 'denenLine2.html';
+    }
+
+    function goToOsaka() {
+        alert('大阪環状線のページに移動します。');
+        window.location.href = 'osakaLine2.html';
+    }
+
+    function goTokaidoTokaido() {
+        alert('東海道線のページに移動します。');
+        window.location.href = 'toukaidoLine2.html';
+    }
+
+    function goTokeikyuu() {
+        alert('京急線のページに移動します。');
+        window.location.href = 'keikyuuLine2.html';
+    }
+
+    function goToOthers() {
+        alert('その他等のページに移動します。');
+        window.location.href = 'others2.html';
+    }
+    </script>
+
+    <button class="explain" onclick="goExplain()">説明</button>
+    <button onclick="goToYamanote()">山手線</button>
+    <button onclick="goToToyoko()">東横線</button>
+    <button onclick="goToOimachi()">大井町線</button>
+    <button onclick="goToDenen()">田園都市線</button>
+    <button onclick="goToOsaka()">大阪環状線</button>
+    <button onclick="goTokaidoTokaido()">東海道線</button>
+    <button onclick="goTokeikyuu()">京急線</button>
+    <button onclick="goToOthers()">その他など</button>
+</div>
+</body>
+</html>

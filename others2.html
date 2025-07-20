@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>条件別 URL ジェネレーター</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c5aa0;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        label {
+            display: block;
+            margin: 10px 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="email"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #conditions {
+            height: 2em; /* 条件入力欄を2行に短縮 */
+        }
+        #urls {
+            height: 14em; /* URL入力欄を14行に拡大 */
+        }
+        button {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #1e3a6b;
+        }
+        #results, #python-response {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<h1>🔍 条件別 URL ジェネレーター</h1>
+<div class="container">
+    <label for="page-select">📄 Page数:</label>
+    <select id="page-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+    </select>
+
+    <label for="email">📧 メールアドレス:</label>
+    <input type="email" id="email" placeholder="your-email@example.com" required>
+
+    <label for="conditions">🎯 検索条件（駅名等）をカンマ区切りで入力してください:</label>
+    <textarea id="conditions" rows="2" placeholder="三軒茶屋,渋谷,新宿　（駅名をカンマ区切り）"></textarea>
+
+    <label for="urls">🔗 URLをカンマ区切りで入力してください(URLの最後に'&page='を付けてください):</label>
+    <textarea id="urls" rows="14" placeholder="https://suumo.jp/jj/chintai/ichiran/FR301FC005/?ar=030&bs=040&ra=013&rn=0230&ek=023016720&cb=0.0&ct=9999999&mb=0&mt=9999999&et=9999999&cn=9999999&shkr1=03&shkr2=03&shkr3=03&shkr4=03&sngz=&po1=25&po2=99&pc=100&page=, https://example2.com"></textarea>
+
+    <button onclick="validateData()">🔍 データ確認</button>
+    <button onclick="sendToPython()">🐍 Pythonへデータ送信</button>
+
+    <div id="validation-results"></div>
+    <div id="python-response"></div>
+</div>
+
+<script>
+// データの確認機能
+function validateData() {
+    const page = document.getElementById("page-select").value;
+    const email = document.getElementById("email").value.trim();
+    const conditions = document.getElementById("conditions").value.split(",").map(c => c.trim()).filter(c => c.length > 0);
+    const urls = document.getElementById("urls").value.split(",").map(u => u.trim()).filter(u => u.length > 0);
+
+    const validationResultsDiv = document.getElementById("validation-results");
+    validationResultsDiv.innerHTML = "";
+
+    let isValid = true;
+    let validationHtml = "<h3>🔍 データ確認結果:</h3>";
+
+    // バリデーション
+    if (!email) {
+        validationHtml += `<p class="error">⚠ メールアドレスを入力してください。</p>`;
+        isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        validationHtml += `<p class="error">⚠ 有効なメールアドレスを入力してください。</p>`;
+        isValid = false;
+    } else {
+        validationHtml += `<p class="success">✅ メールアドレス: ${email}</p>`;
+    }
+
+    if (conditions.length === 0) {
+        validationHtml += `<p class="error">⚠ 検索条件（駅名等）を入力してください。</p>`;
+        isValid = false;
+    } else {
+        validationHtml += `<p class="success">✅ 駅名/条件数: ${conditions.length}個</p>`;
+        validationHtml += `<p class="success">　　駅名リスト: ${conditions.join(", ")}</p>`;
+    }
+
+    if (urls.length === 0) {
+        validationHtml += `<p class="error">⚠ URLを入力してください。</p>`;
+        isValid = false;
+    } else {
+        validationHtml += `<p class="success">✅ URL数: ${urls.length}個</p>`;
+        if (conditions.length !== urls.length) {
+            validationHtml += `<p class="error">⚠ 駅名の数（${conditions.length}個）とURL数（${urls.length}個）が一致しません。</p>`;
+            isValid = false;
+        } else {
+            validationHtml += `<p class="success">✅ 駅名とURL数が一致しています。</p>`;
+        }
+    }
+
+    validationHtml += `<p class="success">✅ Page数: ${page}</p>`;
+
+    if (isValid) {
+        validationHtml += `<p class="success"><strong>🎉 全ての入力が正常です！Pythonへ送信できます。</strong></p>`;
+    } else {
+        validationHtml += `<p class="error"><strong>❌ 入力エラーがあります。修正してください。</strong></p>`;
+    }
+
+    validationResultsDiv.innerHTML = validationHtml;
+    return isValid;
+}
+
+// Pythonへデータを送信
+async function sendToPython() {
+    const page = document.getElementById("page-select").value;
+    const email = document.getElementById("email").value.trim();
+    const conditions = document.getElementById("conditions").value.split(",").map(c => c.trim()).filter(c => c.length > 0);
+    const urls = document.getElementById("urls").value.split(",").map(u => u.trim()).filter(u => u.length > 0);
+
+    const pythonResponseDiv = document.getElementById("python-response");
+    pythonResponseDiv.innerHTML = "";
+
+    // バリデーション
+    if (!validateData()) {
+        pythonResponseDiv.innerHTML = `<p class="error">⚠ 入力エラーがあります。まずデータ確認を行ってください。</p>`;
+        return;
+    }
+
+    // 山手線HTMLと同じ形式でデータを送信（stationsキーを使用）
+    const sendData = { 
+        page: parseInt(page), 
+        email: email, 
+        stations: conditions,  // conditionsをstationsとして送信
+        urls: urls 
+    };
+
+    pythonResponseDiv.innerHTML = `<p>🔄 Pythonサーバーにデータを送信中...</p>`;
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // タイムアウトを30秒に設定
+        
+        const response = await fetch("http://127.0.0.1:5000/receive", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sendData),
+            signal: controller.signal,
+            mode: "cors",
+            cache: "no-cache"
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`サーバーエラー: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // データ構造の確認
+        if (!data || typeof data !== "object") {
+            throw new Error("不正なレスポンスデータ");
+        }
+
+        pythonResponseDiv.innerHTML = `
+            <h3>✅ Pythonサーバーからの応答:</h3>
+            <p class="success"><b>✅ 処理完了:</b> ${data.message}</p>
+            <p class="success"><b>📄 Page数:</b> ${data.page || sendData.page}</p>
+            <p class="success"><b>📧 メールアドレス:</b> ${data.email || sendData.email}</p>
+            <p class="success"><b>🚉 処理した駅数:</b> ${data.scraped_stations || sendData.stations.length}駅</p>
+            <p class="success"><b>🏠 取得した物件数:</b> ${data.total_scraped_items || 0}件</p>
+            <p class="success"><b>📁 出力フォルダ:</b> ${data.output_folder || 'C:\\1111accommodation'}</p>
+            <p class="success"><b>🎯 処理した駅:</b> ${(data.stations || sendData.stations).join(", ")}</p>
+            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e8; border-left: 4px solid #4caf50;">
+                <strong>🎉 処理が完了しました！</strong><br>
+                スクレイピング、統計処理、グラフ作成、PowerPoint作成、ファイル移動が全て完了しています。
+            </div>
+        `;
+    } catch (error) {
+        console.error("通信エラー:", error.message);
+
+        if (error.name === 'AbortError') {
+            pythonResponseDiv.innerHTML = `
+                <p class="error">⏰ タイムアウトエラー: サーバーからの応答に時間がかかりすぎています。</p>
+                <p>処理は継続中の可能性があります。しばらく待ってからファイルを確認してください。</p>
+            `;
+        } else {
+            pythonResponseDiv.innerHTML = `
+                <h3>❌ 通信エラーが発生しました</h3>
+                <p class="error"><b>エラー詳細:</b> ${error.message}</p>
+                <h4>📤 送信したデータ:</h4>
+                <p><b>Page数:</b> ${sendData.page}</p>
+                <p><b>メールアドレス:</b> ${sendData.email}</p>
+                <p><b>駅名リスト:</b> ${sendData.stations.join(", ")}</p>
+                <p><b>URL数:</b> ${sendData.urls.length}個</p>
+                <details>
+                    <summary>URLリストを表示</summary>
+                    <ul>
+                        ${sendData.urls.map(url => `<li><a href="${url}" target="_blank">${url}</a></li>`).join("")}
+                    </ul>
+                </details>
+                <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                    <strong>💡 トラブルシューティング:</strong><br>
+                    1. Pythonサーバーが起動しているか確認してください<br>
+                    2. ファイアウォールでポート5000がブロックされていないか確認してください<br>
+                    3. ブラウザのコンソール（F12）でエラーを確認してください
+                </div>
+            `;
+        }
+    }
+}
+
+// ページ読み込み時にデフォルト値を設定
+window.onload = function() {
+    // デフォルトの駅名
+    document.getElementById("conditions").value = "三軒茶屋,下北沢,吉祥寺";
+    
+    // デフォルトのURL
+    document.getElementById("urls").value = "https://suumo.jp/jj/chintai/ichiran/FR301FC005/?ar=030&bs=040&ra=013&rn=0230&ek=023016720&cb=0.0&ct=9999999&mb=0&mt=9999999&et=9999999&cn=9999999&shkr1=03&shkr2=03&shkr3=03&shkr4=03&sngz=&po1=25&po2=99&pc=100&page=,https://suumo.jp/jj/chintai/ichiran/FR301FC005/?ar=030&bs=040&ra=013&rn=0265&ek=026518010&cb=0.0&ct=9999999&mb=0&mt=9999999&et=9999999&cn=9999999&shkr1=03&shkr2=03&shkr3=03&shkr4=03&sngz=&po1=25&po2=99&pc=100&page=,https://suumo.jp/jj/chintai/ichiran/FR301FC005/?ar=030&bs=040&ra=013&rn=0265&ek=026511640&cb=0.0&ct=9999999&mb=0&mt=9999999&et=9999999&cn=9999999&shkr1=03&shkr2=03&shkr3=03&shkr4=03&sngz=&po1=25&po2=99&pc=100&page=";
+};
+</script>
+</body>
+</html>
