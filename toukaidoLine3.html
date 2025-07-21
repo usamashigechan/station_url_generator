@@ -190,7 +190,7 @@ async function sendToPython() {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // タイムアウトを15秒に変更
-        const response = await fetch("https://property-scraper-test-72481940726.asia-northeast1.run.app/receive", {
+        const response = await fetch("https://simple-working-api-72481940726.asia-northeast1.run.app/receive", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(sendData),
