@@ -62,47 +62,42 @@ button.explain {
 
     <script>
     function goExplain() {
-        alert('説明のページに移動します。');
         window.location.href = 'explain1.html';
     }
 
     function goToYamanote() {
-        alert('山手線のページに移動します。');
         window.location.href = 'yamanoteLine2.html';
     }
 
     function goToToyoko() {
-        alert('東横線のページに移動します。');
         window.location.href = 'toyokoLine2.html';
     }
 
     function goToOimachi() {
-        alert('大井町線のページに移動します。');
         window.location.href = 'oimachiLine2.html';
     }
 
     function goToDenen() {
-        alert('田園都市線のページに移動します。');
         window.location.href = 'denenLine2.html';
     }
 
     function goToOsaka() {
-        alert('大阪環状線のページに移動します。');
         window.location.href = 'osakaLine2.html';
     }
 
     function goTokaidoTokaido() {
-        alert('東海道線のページに移動します。');
         window.location.href = 'toukaidoLine2.html';
     }
 
     function goTokeikyuu() {
-        alert('京急線のページに移動します。');
         window.location.href = 'keikyuuLine2.html';
     }
 
+       function goMinamikanto() {
+        window.location.href = 'minamikanto2.html';
+    }
+
     function goToOthers() {
-        alert('その他等のページに移動します。');
         window.location.href = 'others2.html';
     }
     </script>
@@ -115,6 +110,7 @@ button.explain {
     <button onclick="goToOsaka()">大阪環状線</button>
     <button onclick="goTokaidoTokaido()">東海道線</button>
     <button onclick="goTokeikyuu()">京急線</button>
+       <button onclick="goMinamikanto()">南関東全体</button>
     <button onclick="goToOthers()">その他など</button>
 </div>
 </body>
